@@ -17,8 +17,12 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from progressao.views import pagina_simulador
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", include("progressao.urls")),
+    path("", pagina_simulador, name="home"),
+    path("progressao/", include("progressao.urls")),
+    path("geometria/", include("geometria.urls")),
+    path("algebra/", include("algebra.urls")),
 ]

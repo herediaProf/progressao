@@ -1,3 +1,9 @@
 from django.shortcuts import render
 
-# Create your views here.
+
+def trigonometria(request):
+    return render(request, "geometria/trigonometria.html")
+
+
+def espacial(request):
+    return render(request, "geometria/espacial.html")

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {% block title %}Laboratório Dinâmico de Matemática{% endblock %}
+    </title>
+
+    <!-- Estilização Base / CSS -->
+    <style>
+      :root {
+        --bg-primary: #0f172a;
+        --bg-card: #1e293b;
+        --accent-blue: #3b82f6;
+        --accent-green: #10b981;
+        --accent-orange: #f59e0b;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-main);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Navbar */
+      nav {
+        background: var(--bg-card);
+        border-bottom: 1px solid #334155;
+        padding: 15px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      nav .logo {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--accent-blue);
+        text-decoration: none;
+      }
+      nav ul {
+        display: flex;
+        list-style: none;
+        gap: 20px;
+      }
+      nav a {
+        color: var(--text-muted);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+      }
+      nav a:hover,
+      nav a.active {
+        color: var(--accent-blue);
+      }
+
+      /* Container Principal */
+      main {
+        flex: 1;
+        padding: 30px;
+        max-width: 1400px;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      /* Footer */
+      footer {
+        background: var(--bg-card);
+        border-top: 1px solid #334155;
+        text-align: center;
+        padding: 15px;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+      }
+    </style>
+
+    <!-- Bibliotecas Matemáticas e Gráficas (CDNs oficiais de alta performance) -->
+    <!-- 1. JSXGraph (Geometria 2D e Trigonometria) -->
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraph.css"
+    />
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraphcore.js"
+    ></script>
+
+    <!-- 2. MathJax (Renderização de Fórmulas e LaTeX) -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
+
+    <!-- 3. Three.js (Geometria Espacial 3D e Matrizes) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- 4. Chart.js (Estatística e Finanças) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    {% block extra_head %}{% endblock %}
+  </head>
+  <body>
+    <nav>
+      <a href="/" class="logo">📐 MathLab Interativo</a>
+      <ul>
+        <li><a href="/">Início</a></li>
+        <li><a href="/geometria/trigonometria/">Trigonometria</a></li>
+        <li><a href="/geometria/espacial/">Geometria 3D</a></li>
+        <li><a href="/algebra/exponencial-log/">Exp & Log</a></li>
+        <li><a href="/progressao/">PA & PG</a></li>
+      </ul>
+    </nav>
+
+    <main>{% block content %}{% endblock %}</main>
+
+    <footer>
+      Laboratório Dinâmico de Matemática — Desenvolvido com Django, JSXGraph &
+      Three.js
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>
