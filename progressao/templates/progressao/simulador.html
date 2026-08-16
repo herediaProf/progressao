@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Simulador de P.A. e P.G.</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 20px;
+        background: #f4f6f8;
+      }
+      .container {
+        display: flex;
+        gap: 20px;
+      }
+      .painel {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        width: 300px;
+      }
+      .visual {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        flex: 1;
+      }
+      canvas {
+        border: 1px solid #ccc;
+        width: 100%;
+        height: 300px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Laboratório de P.A. e P.G.</h1>
+
+    <div class="container">
+      <div class="painel">
+        <label>Tipo:</label>
+        <select id="tipo" onchange="simular()">
+          <option value="pa">P.A. (Aritmética)</option>
+          <option value="pg">P.G. (Geométrica)</option></select
+        ><br /><br />
+
+        <label>Termo Inicial (a_1): <span id="a1_val">2</span></label
+        ><br />
+        <input
+          type="range"
+          id="a1"
+          min="1"
+          max="10"
+          value="2"
+          oninput="simular()"
+        /><br /><br />
+
+        <label>Razão (r/q): <span id="razao_val">2</span></label
+        ><br />
+        <input
+          type="range"
+          id="razao"
+          min="0.5"
+          max="4"
+          step="0.5"
+          value="2"
+          oninput="simular()"
+        /><br /><br />
+
+        <label>Termos (n): <span id="n_val">8</span></label
+        ><br />
+        <input
+          type="range"
+          id="n"
+          min="2"
+          max="12"
+          value="8"
+          oninput="simular()"
+        />
+      </div>
+
+      <div class="visual">
+        <div id="info">Carregando...</div>
+        <br />
+        <canvas id="canvasSimulador" width="500" height="300"></canvas>
+      </div>
+    </div>
+
+    <script>
+      async function simular() {
+        const tipo = document.getElementById("tipo").value;
+        const a1 = document.getElementById("a1").value;
+        const razao = document.getElementById("razao").value;
+        const n = document.getElementById("n").value;
+
+        document.getElementById("a1_val").innerText = a1;
+        document.getElementById("razao_val").innerText = razao;
+        document.getElementById("n_val").innerText = n;
+
+        // Chamada à API configurada no Django
+        const res = await fetch(
+          `/api/gerar/?tipo=${tipo}&a1=${a1}&razao=${razao}&n=${n}`,
+        );
+        const data = await res.json();
+
+        if (data.status === "sucesso") {
+          document.getElementById("info").innerHTML =
+            `<strong>Soma (S_n):</strong> ${data.soma}`;
+          desenhar(data.termos, tipo);
+        }
+      }
+
+      function desenhar(termos, tipo) {
+        const canvas = document.getElementById("canvasSimulador");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const maxVal = Math.max(...termos, 1);
+        const larguraBarra = (canvas.width - 40) / termos.length - 5;
+
+        termos.forEach((termo, idx) => {
+          const altura = (termo / maxVal) * 220;
+          const x = 20 + idx * (larguraBarra + 5);
+          const y = canvas.height - 20 - altura;
+
+          ctx.fillStyle = tipo === "pa" ? "#3182ce" : "#dd6b20";
+          ctx.fillRect(x, y, larguraBarra, altura);
+        });
+      }
+
+      window.onload = simular;
+    </script>
+  </body>
+</html>
