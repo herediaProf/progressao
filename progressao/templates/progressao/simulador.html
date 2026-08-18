@@ -1,133 +1,171 @@
-<!doctype html>
-<html lang="pt-br">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Simulador de P.A. e P.G.</title>
-    <style>
-      body {
-        font-family: sans-serif;
-        padding: 20px;
-        background: #f4f6f8;
-      }
-      .container {
-        display: flex;
-        gap: 20px;
-      }
-      .painel {
-        background: #fff;
-        padding: 20px;
-        border-radius: 8px;
-        width: 300px;
-      }
-      .visual {
-        background: #fff;
-        padding: 20px;
-        border-radius: 8px;
-        flex: 1;
-      }
-      canvas {
-        border: 1px solid #ccc;
-        width: 100%;
-        height: 300px;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Laboratório de P.A. e P.G.</h1>
+{% extends "base.html" %}
 
-    <div class="container">
-      <div class="painel">
-        <label>Tipo:</label>
-        <select id="tipo" onchange="simular()">
+{% block title %}Laboratório de P.A. e P.G. - MathLab{% endblock %}
+
+{% block content %}
+<style>
+  .dark-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #f8fafc;
+  }
+  .grid-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    margin-top: 20px;
+  }
+  .card-panel {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  }
+  .form-group {
+    margin-bottom: 20px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-bottom: 8px;
+  }
+  .form-group .val-highlight {
+    color: #38bdf8;
+    font-weight: 700;
+  }
+  select.dark-input {
+    width: 100%;
+    background: #0f172a;
+    color: #f8fafc;
+    border: 1px solid #334155;
+    padding: 10px;
+    border-radius: 6px;
+    outline: none;
+  }
+  input[type="range"].dark-range {
+    width: 100%;
+    accent-color: #38bdf8;
+    background: #0f172a;
+  }
+  .info-box {
+    background: #0f172a;
+    border: 1px solid #334155;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  canvas {
+    width: 100%;
+    height: 340px;
+    background: #0b0f19;
+    border: 1px solid #334155;
+    border-radius: 8px;
+  }
+</style>
+
+<div class="dark-container">
+  <h1 style="font-size: 1.8rem; font-weight: 700; color: #f8fafc; margin: 0;">
+    Laboratório de P.A. e P.G.
+  </h1>
+
+  <div class="grid-layout">
+    <!-- Controles da Progressão -->
+    <div class="card-panel">
+      <div class="form-group">
+        <label>Tipo de Sequência:</label>
+        <select id="tipo" class="dark-input" onchange="simular()">
           <option value="pa">P.A. (Aritmética)</option>
-          <option value="pg">P.G. (Geométrica)</option></select
-        ><br /><br />
-
-        <label>Termo Inicial (a_1): <span id="a1_val">2</span></label
-        ><br />
-        <input
-          type="range"
-          id="a1"
-          min="1"
-          max="10"
-          value="2"
-          oninput="simular()"
-        /><br /><br />
-
-        <label>Razão (r/q): <span id="razao_val">2</span></label
-        ><br />
-        <input
-          type="range"
-          id="razao"
-          min="0.5"
-          max="4"
-          step="0.5"
-          value="2"
-          oninput="simular()"
-        /><br /><br />
-
-        <label>Termos (n): <span id="n_val">8</span></label
-        ><br />
-        <input
-          type="range"
-          id="n"
-          min="2"
-          max="12"
-          value="8"
-          oninput="simular()"
-        />
+          <option value="pg">P.G. (Geométrica)</option>
+        </select>
       </div>
 
-      <div class="visual">
-        <div id="info">Carregando...</div>
-        <br />
-        <canvas id="canvasSimulador" width="500" height="300"></canvas>
+      <div class="form-group">
+        <label>Termo Inicial (a₁): <span id="a1_val" class="val-highlight">2</span></label>
+        <input type="range" id="a1" class="dark-range" min="1" max="10" value="2" oninput="simular()" />
+      </div>
+
+      <div class="form-group">
+        <label>Razão (r / q): <span id="razao_val" class="val-highlight">2</span></label>
+        <input type="range" id="razao" class="dark-range" min="0.5" max="4" step="0.5" value="2" oninput="simular()" />
+      </div>
+
+      <div class="form-group">
+        <label>Número de Termos (n): <span id="n_val" class="val-highlight">8</span></label>
+        <input type="range" id="n" class="dark-range" min="2" max="12" value="8" oninput="simular()" />
       </div>
     </div>
 
-    <script>
-      async function simular() {
-        const tipo = document.getElementById("tipo").value;
-        const a1 = document.getElementById("a1").value;
-        const razao = document.getElementById("razao").value;
-        const n = document.getElementById("n").value;
+    <!-- Visualização Gráfica -->
+    <div class="card-panel">
+      <div id="info" class="info-box">Carregando...</div>
+      <canvas id="canvasSimulador" width="650" height="340"></canvas>
+    </div>
+  </div>
+</div>
 
-        document.getElementById("a1_val").innerText = a1;
-        document.getElementById("razao_val").innerText = razao;
-        document.getElementById("n_val").innerText = n;
+<script>
+  async function simular() {
+    const tipo = document.getElementById("tipo").value;
+    const a1 = document.getElementById("a1").value;
+    const razao = document.getElementById("razao").value;
+    const n = document.getElementById("n").value;
 
-        // Chamada à API configurada no Django
-        const res = await fetch(
-          `/api/gerar/?tipo=${tipo}&a1=${a1}&razao=${razao}&n=${n}`,
-        );
-        const data = await res.json();
+    document.getElementById("a1_val").innerText = a1;
+    document.getElementById("razao_val").innerText = razao;
+    document.getElementById("n_val").innerText = n;
 
-        if (data.status === "sucesso") {
-          document.getElementById("info").innerHTML =
-            `<strong>Soma (S_n):</strong> ${data.soma}`;
-          desenhar(data.termos, tipo);
-        }
+    try {
+      const res = await fetch(`/progressao/api/gerar/?tipo=${tipo}&a1=${a1}&razao=${razao}&n=${n}`);
+      const data = await res.json();
+
+      if (data.status === "sucesso") {
+        document.getElementById("info").innerHTML = 
+          `Soma dos ${data.termos.length} termos (Sₙ): <span style="color: #38bdf8;">${data.soma}</span>`;
+        desenhar(data.termos, tipo);
       }
+    } catch (err) {
+      document.getElementById("info").innerText = "Erro ao conectar com a API.";
+      console.error(err);
+    }
+  }
 
-      function desenhar(termos, tipo) {
-        const canvas = document.getElementById("canvasSimulador");
-        const ctx = canvas.getContext("2d");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+  function desenhar(termos, tipo) {
+    const canvas = document.getElementById("canvasSimulador");
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        const maxVal = Math.max(...termos, 1);
-        const larguraBarra = (canvas.width - 40) / termos.length - 5;
+    const maxVal = Math.max(...termos, 1);
+    const padding = 40;
+    const larguraBarra = (canvas.width - padding * 2) / termos.length - 10;
 
-        termos.forEach((termo, idx) => {
-          const altura = (termo / maxVal) * 220;
-          const x = 20 + idx * (larguraBarra + 5);
-          const y = canvas.height - 20 - altura;
+    termos.forEach((termo, idx) => {
+      const altura = (termo / maxVal) * 230;
+      const x = padding + idx * (larguraBarra + 10);
+      const y = canvas.height - 35 - altura;
 
-          ctx.fillStyle = tipo === "pa" ? "#3182ce" : "#dd6b20";
-          ctx.fillRect(x, y, larguraBarra, altura);
-        });
-      }
+      // Cor das barras conforme tipo (Azul Neon para PA, Laranja/Dourado para PG)
+      ctx.fillStyle = tipo === "pa" ? "#38bdf8" : "#f59e0b";
+      ctx.fillRect(x, y, larguraBarra, altura);
 
-      window.onload = simular;
-    </script>
-  </body>
-</html>
+      // Valores numéricos acima das barras
+      ctx.fillStyle = "#f8fafc";
+      ctx.font = "bold 12px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(termo, x + larguraBarra / 2, y - 8);
+
+      // Rótulos dos eixos (a1, a2, ...)
+      ctx.fillStyle = "#64748b";
+      ctx.font = "11px sans-serif";
+      ctx.fillText(`a${idx + 1}`, x + larguraBarra / 2, canvas.height - 12);
+    });
+  }
+
+  window.onload = simular;
+</script>
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Desafio Dinâmico - MathLab{% endblock %}
+
+{% block content %}
+<style>
+  .quiz-layout { display: grid; grid-template-columns: 360px 1fr; gap: 20px; max-width: 1200px; margin: 0 auto; }
+  .panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; }
+  
+  .banner-revisao { background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #fcd34d; font-size: 0.88rem; display: none; }
+  .status-box { padding: 12px; border-radius: 8px; margin-top: 16px; font-weight: 700; text-align: center; display: none; }
+  .status-sucesso { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+  .status-erro { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; }
+
+  canvas { width: 100%; height: 400px; background: #0b0f19; border: 1px solid var(--border-color); border-radius: 8px; }
+</style>
+
+<div class="quiz-layout">
+  <div class="panel" style="z-index: 10; position: relative;">
+    <h2 style="font-size: 1.2rem; margin-bottom: 10px;">🎲 {{ desafio.titulo }}</h2>
+    <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 15px;">{{ desafio.enunciado }}</p>
+
+    <!-- Banner de Recomendação de Reforço (Trilha Adaptativa) -->
+    <div id="bannerRevisao" class="banner-revisao">
+      <strong id="revisaoTitulo">⚠️ Reforço Sugerido:</strong>
+      <p id="revisaoText" style="margin: 5px 0 8px 0;"></p>
+      <a id="revisaoLink" href="#" style="color: var(--accent-blue); font-weight: 700;">Ir para aula de revisão &rarr;</a>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 15px;">
+      <label>Base (a): <span id="val_base" style="color: var(--accent-blue);">2.0</span></label>
+      <input type="range" id="slider_base" min="0.2" max="5.0" step="0.1" value="2.0" class="dark-range" style="width: 100%;">
+    </div>
+
+    <div class="form-group" style="margin-bottom: 15px;">
+      <label>Multiplicador (k): <span id="val_k" style="color: var(--accent-blue);">1.0</span></label>
+      <input type="range" id="slider_k" min="-3.0" max="3.0" step="0.1" value="1.0" class="dark-range" style="width: 100%;">
+    </div>
+
+    <button id="btnValidar" style="width: 100%; padding: 12px; background: var(--accent-blue); border: none; border-radius: 6px; color: #0f172a; font-weight: 800; cursor: pointer;">
+      Verificar Alinhamento
+    </button>
+    
+    <button id="btnProximo" style="width: 100%; padding: 12px; margin-top: 10px; background: transparent; border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); font-weight: 700; cursor: pointer; display: none;" onclick="location.reload();">
+      Próximo Desafio ➔
+    </button>
+
+    <div id="feedback" class="status-box"></div>
+  </div>
+
+  <div class="panel">
+    <canvas id="canvasQuiz" width="650" height="400"></canvas>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const slBase = document.getElementById("slider_base");
+    const slK = document.getElementById("slider_k");
+    const txtBase = document.getElementById("val_base");
+    const txtK = document.getElementById("val_k");
+    const canvas = document.getElementById("canvasQuiz");
+    const ctx = canvas.getContext("2d");
+    const feedback = document.getElementById("feedback");
+
+    const ALVO_BASE = {{ desafio.alvo_base|stringformat:"f" }};
+    const ALVO_K = {{ desafio.alvo_k|stringformat:"f" }};
+    const TIPO = "{{ desafio.tipo }}";
+
+    function render() {
+      const a = parseFloat(slBase.value);
+      const k = parseFloat(slK.value);
+
+      txtBase.innerText = a.toFixed(1);
+      txtK.innerText = k.toFixed(1);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const escala = 40;
+
+      ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += escala) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+      for (let y = 0; y < canvas.height; y += escala) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+
+      ctx.strokeStyle = "#475569"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(canvas.width, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, canvas.height); ctx.stroke();
+
+      // Curva Alvo (Vermelha)
+      ctx.strokeStyle = "#ef4444"; ctx.lineWidth = 2; ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      let initTarget = false;
+      for (let px = 0; px < canvas.width; px += 2) {
+        const x = (px - cx) / escala;
+        let y = TIPO === 'exp' ? ALVO_K * Math.pow(ALVO_BASE, x) : (x > 0 ? ALVO_K * (Math.log(x) / Math.log(ALVO_BASE)) : null);
+        if (y !== null && isFinite(y)) {
+          const py = cy - y * escala;
+          if (py >= -50 && py <= canvas.height + 50) {
+            if (!initTarget) { ctx.moveTo(px, py); initTarget = true; } else { ctx.lineTo(px, py); }
+          }
+        }
+      }
+      ctx.stroke(); ctx.setLineDash([]);
+
+      // Curva Aluno (Azul)
+      ctx.strokeStyle = "var(--accent-blue)"; ctx.lineWidth = 3;
+      ctx.beginPath();
+      let initUser = false;
+      for (let px = 0; px < canvas.width; px += 2) {
+        const x = (px - cx) / escala;
+        let y = TIPO === 'exp' ? k * Math.pow(a, x) : (x > 0 ? k * (Math.log(x) / Math.log(a)) : null);
+        if (y !== null && isFinite(y)) {
+          const py = cy - y * escala;
+          if (py >= -50 && py <= canvas.height + 50) {
+            if (!initUser) { ctx.moveTo(px, py); initUser = true; } else { ctx.lineTo(px, py); }
+          }
+        }
+      }
+      ctx.stroke();
+    }
+
+    slBase.addEventListener("input", () => requestAnimationFrame(render));
+    slK.addEventListener("input", () => requestAnimationFrame(render));
+
+    document.getElementById("btnValidar").addEventListener("click", async () => {
+      const formData = new FormData();
+      formData.append("base", slBase.value);
+      formData.append("k", slK.value);
+      formData.append("csrfmiddlewaretoken", "{{ csrf_token }}");
+
+      const res = await fetch("{% url 'validar_desafio_dinamico' %}", { method: "POST", body: formData });
+      const data = await res.json();
+
+      feedback.style.display = "block";
+      feedback.className = `status-box ${data.correto ? 'status-sucesso' : 'status-erro'}`;
+      feedback.innerHTML = data.correto ? `${data.mensagem} <strong>+${data.xp_ganho} XP</strong>` : data.mensagem;
+
+      if (data.correto) {
+        document.getElementById("btnProximo").style.display = "block";
+      }
+
+      if (data.recomendacao && data.recomendacao.precisa_reforcio) {
+        const banner = document.getElementById("bannerRevisao");
+        document.getElementById("revisaoText").innerText = data.recomendacao.mensagem;
+        document.getElementById("revisaoLink").href = data.recomendacao.link_revisao;
+        banner.style.display = "block";
+      }
+    });
+
+    render();
+  });
+</script>
+{% endblock %}

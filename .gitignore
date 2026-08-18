@@ -1,5 +1,22 @@
+# Ambientes Virtuais
+venv/
 .venv/
+env/
+
+# Python & Django Cache
 __pycache__/
-*.pyc
-db.sqlite3
-.DS_Store
+*.py[cod]
+*.sqlite3
+
+# Arquivos de Variáveis de Ambiente
+.env
+.env.*
+
+# Arquivos Gerados de Mídia e Estáticos Locais
+/media/
+/staticfiles/
+
+# IDEs e Editores
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Conjuntos e Diagrama de Venn - MathLab{% endblock %}
+
+{% block content %}
+<style>
+  .dark-container { max-width: 1200px; margin: 0 auto; padding: 20px; color: #f8fafc; }
+  .grid-layout { display: grid; grid-template-columns: 340px 1fr; gap: 20px; margin-top: 20px; }
+  .card-panel { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 20px; }
+  .form-group { margin-bottom: 18px; }
+  .form-group label { display: block; font-size: 0.9rem; font-weight: 600; color: #94a3b8; margin-bottom: 6px; }
+  .dark-input { width: 100%; background: #0f172a; color: #f8fafc; border: 1px solid #334155; padding: 10px; border-radius: 6px; font-size: 0.95rem; }
+  .op-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .op-btn { background: #0f172a; border: 1px solid #334155; color: #94a3b8; padding: 8px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+  .op-btn.active { background: #38bdf8; color: #0f172a; border-color: #38bdf8; }
+  .result-box { background: #0f172a; border: 1px solid #334155; padding: 12px; border-radius: 8px; margin-top: 15px; font-size: 0.95rem; }
+  canvas { width: 100%; height: 380px; background: #0b0f19; border: 1px solid #334155; border-radius: 8px; }
+</style>
+
+<div class="dark-container">
+  <h1 style="font-size: 1.8rem; font-weight: 700; margin: 0;">Conjuntos e Operações (Diagrama de Venn)</h1>
+
+  <div class="grid-layout">
+    <div class="card-panel">
+      <div class="form-group">
+        <label>Elementos do Conjunto A (separados por vírgula):</label>
+        <input type="text" id="inputA" class="dark-input" value="1, 2, 3, 4, 5" onchange="atualizar()">
+      </div>
+
+      <div class="form-group">
+        <label>Elementos do Conjunto B (separados por vírgula):</label>
+        <input type="text" id="inputB" class="dark-input" value="4, 5, 6, 7, 8" onchange="atualizar()">
+      </div>
+
+      <label style="font-size: 0.9rem; font-weight: 600; color: #94a3b8;">Destacar Operação:</label>
+      <div class="op-btn-group">
+        <button class="op-btn active" id="btn-uniao" onclick="setOperacao('uniao')">A ∪ B (União)</button>
+        <button class="op-btn" id="btn-intersecao" onclick="setOperacao('intersecao')">A ∩ B (Interseção)</button>
+        <button class="op-btn" id="btn-diff_a_b" onclick="setOperacao('diff_a_b')">A \ B (Diferença)</button>
+        <button class="op-btn" id="btn-diff_b_a" onclick="setOperacao('diff_b_a')">B \ A (Diferença)</button>
+      </div>
+
+      <div class="result-box">
+        <div style="color: #94a3b8; font-size: 0.85rem;">Resultado da Operação:</div>
+        <div id="resultado_texto" style="font-size: 1.1rem; font-weight: 700; color: #38bdf8; margin-top: 4px;">{ }</div>
+        <div id="cardinalidade_texto" style="color: #10b981; font-size: 0.85rem; margin-top: 6px;">n(A ∪ B) = 0</div>
+      </div>
+    </div>
+
+    <div class="card-panel">
+      <div style="color: #94a3b8; font-weight: 600; margin-bottom: 10px;">Representação Gráfica em Espaço Euler-Venn</div>
+      <canvas id="canvasVenn" width="650" height="380"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+  let operacaoAtual = 'uniao';
+  let dadosAtuais = null;
+
+  function setOperacao(op) {
+    operacaoAtual = op;
+    document.querySelectorAll('.op-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`btn-${op}`).classList.add('active');
+    renderizar();
+  }
+
+  async function atualizar() {
+    const setA = encodeURIComponent(document.getElementById("inputA").value);
+    const setB = encodeURIComponent(document.getElementById("inputB").value);
+
+    try {
+      const res = await fetch(`/algebra/api/conjuntos/operacao/?set_a=${setA}&set_b=${setB}`);
+      dadosAtuais = await res.json();
+      if (dadosAtuais.status === "sucesso") {
+        renderizar();
+      }
+    } catch (err) {
+      console.error("Erro na API de Conjuntos:", err);
+    }
+  }
+
+  function renderizar() {
+    if (!dadosAtuais) return;
+
+    const resBox = document.getElementById("resultado_texto");
+    const cardBox = document.getElementById("cardinalidade_texto");
+    const conjuntoRes = dadosAtuais[operacaoAtual];
+
+    resBox.innerText = `{ ${conjuntoRes.join(", ")} }`;
+
+    const nomesOps = {
+      uniao: "n(A ∪ B)",
+      intersecao: "n(A ∩ B)",
+      diff_a_b: "n(A \\ B)",
+      diff_b_a: "n(B \\ A)"
+    };
+    cardBox.innerText = `${nomesOps[operacaoAtual]} = ${conjuntoRes.length} elementos`;
+
+    desenharVenn();
+  }
+
+  function desenharVenn() {
+    const canvas = document.getElementById("canvasVenn");
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const cA = { x: 250, y: 190, r: 120 };
+    const cB = { x: 400, y: 190, r: 120 };
+
+    // Regiões de Preenchimento (Highlighters)
+    ctx.save();
+    
+    // Região Exclusiva A
+    if (operacaoAtual === 'uniao' || operacaoAtual === 'diff_a_b') {
+      ctx.fillStyle = "rgba(56, 189, 248, 0.35)";
+      ctx.beginPath(); ctx.arc(cA.x, cA.y, cA.r, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Região Exclusiva B
+    if (operacaoAtual === 'uniao' || operacaoAtual === 'diff_b_a') {
+      ctx.fillStyle = "rgba(16, 185, 129, 0.35)";
+      ctx.beginPath(); ctx.arc(cB.x, cB.y, cB.r, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Interseção (Clip interseção para destacar se necessário)
+    if (operacaoAtual === 'intersecao') {
+      ctx.beginPath(); ctx.arc(cA.x, cA.y, cA.r, 0, Math.PI * 2); ctx.clip();
+      ctx.fillStyle = "rgba(245, 158, 11, 0.5)";
+      ctx.beginPath(); ctx.arc(cB.x, cB.y, cB.r, 0, Math.PI * 2); ctx.fill();
+    } else if (operacaoAtual === 'diff_a_b') {
+      // Mascara B na diferença A \ B
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath(); ctx.arc(cB.x, cB.y, cB.r, 0, Math.PI * 2); ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+    } else if (operacaoAtual === 'diff_b_a') {
+      // Mascara A na diferença B \ A
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath(); ctx.arc(cA.x, cA.y, cA.r, 0, Math.PI * 2); ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    ctx.restore();
+
+    // Bordas dos Círculos
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#38bdf8";
+    ctx.beginPath(); ctx.arc(cA.x, cA.y, cA.r, 0, Math.PI * 2); ctx.stroke();
+
+    ctx.strokeStyle = "#10b981";
+    ctx.beginPath(); ctx.arc(cB.x, cB.y, cB.r, 0, Math.PI * 2); ctx.stroke();
+
+    // Rótulos dos Conjuntos
+    ctx.font = "bold 16px sans-serif";
+    ctx.fillStyle = "#38bdf8"; ctx.fillText("Conjunto A", cA.x - 60, cA.y - cA.r - 10);
+    ctx.fillStyle = "#10b981"; ctx.fillText("Conjunto B", cB.x + 10, cB.y - cB.r - 10);
+
+    // Escrever os Elementos nas suas respectivas regiões
+    ctx.font = "13px sans-serif";
+    
+    // A exclusivo
+    ctx.fillStyle = "#f8fafc";
+    dadosAtuais.diff_a_b.forEach((item, idx) => {
+      ctx.fillText(item, cA.x - 50 + (idx % 2) * 25, cA.y - 20 + Math.floor(idx / 2) * 22);
+    });
+
+    // Interseção
+    ctx.fillStyle = "#f59e0b";
+    dadosAtuais.intersecao.forEach((item, idx) => {
+      ctx.fillText(item, 320, cA.y - 20 + idx * 22);
+    });
+
+    // B exclusivo
+    ctx.fillStyle = "#f8fafc";
+    dadosAtuais.diff_b_a.forEach((item, idx) => {
+      ctx.fillText(item, cB.x + 30 + (idx % 2) * 25, cB.y - 20 + Math.floor(idx / 2) * 22);
+    });
+  }
+
+  window.onload = atualizar;
+</script>
+{% endblock %}

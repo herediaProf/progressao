@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Estatística Descritiva e Gráficos{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px;">4. Estatística Descritiva & Análise de Dados</h2>
+
+<div style="display: grid; grid-template-columns: 320px 1fr; gap: 20px;">
+    <!-- Painel de Entrada de Dados -->
+    <div style="background: var(--bg-card); padding: 20px; border-radius: 8px;">
+        <h3>Amostra de Dados</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px; margin-bottom: 15px;">
+            Insira os valores separados por vírgula ou espaço.
+        </p>
+        
+        <textarea id="inputDados" rows="5" style="width: 100%; padding: 10px; border-radius: 6px; background: #0f172a; color: #fff; border: 1px solid #334155; font-family: monospace;" placeholder="Ex: 12, 15, 12, 18, 20, 25, 12, 30, 22"></textarea>
+        
+        <button onclick="calcularEstatistica()" style="width: 100%; margin-top: 15px; padding: 12px; background: var(--accent-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+            📊 Calcular & Gerar Gráfico
+        </button>
+
+        <!-- Quadro de Resultados -->
+        <div id="resultadoBox" style="margin-top: 20px; display: none;">
+            <h4 style="border-bottom: 1px solid #334155; padding-bottom: 5px; margin-bottom: 10px;">Resultados</h4>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.95rem;">
+                <div>Amostra ($n$): <strong id="resN">-</strong></div>
+                <div>Média ($\bar{x}$): <strong id="resMedia" style="color: #38bdf8;">-</strong></div>
+                <div>Mediana ($Md$): <strong id="resMediana" style="color: #10b981;">-</strong></div>
+                <div>Moda ($Mo$): <strong id="resModa" style="color: #f59e0b;">-</strong></div>
+                <div>Desvio Padrão ($\sigma$): <strong id="resDesvio">-</strong></div>
+                <div>Variância ($\sigma^2$): <strong id="resVariancia">-</strong></div>
+                <div>Amplitude ($R$): <strong id="resAmplitude">-</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Frequências (Chart.js) -->
+    <div style="background: var(--bg-card); padding: 20px; border-radius: 8px;">
+        <h3>Distribuição de Frequências</h3>
+        <div style="position: relative; height: 380px; margin-top: 15px;">
+            <canvas id="chartFrequencia"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let meuGrafico = null;
+
+function calcularEstatistica() {
+    const rawDados = document.getElementById('inputDados').value;
+    if (!rawDados.trim()) {
+        alert("Por favor, digite alguns números.");
+        return;
+    }
+
+    fetch(`/estatistica/api/calcular/?dados=${encodeURIComponent(rawDados)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'erro') {
+                alert(data.mensagem);
+                return;
+            }
+
+            const r = data.resultados;
+            
+            // Preenche a tabela de resultados
+            document.getElementById('resN').innerText = r.n;
+            document.getElementById('resMedia').innerText = r.media;
+            document.getElementById('resMediana').innerText = r.mediana;
+            document.getElementById('resModa').innerText = r.moda;
+            document.getElementById('resDesvio').innerText = r.desvio_padrao;
+            document.getElementById('resVariancia').innerText = r.variancia;
+            document.getElementById('resAmplitude').innerText = r.amplitude;
+            
+            document.getElementById('resultadoBox').style.display = 'block';
+
+            // Atualiza o gráfico Chart.js
+            atualizarGrafico(r.frequencias);
+
+            // Re-renderiza fórmulas MathJax se necessário
+            if (window.MathJax) {
+                MathJax.typeset();
+            }
+        })
+        .catch(err => console.error(err));
+}
+
+function atualizarGrafico(frequencias) {
+    const ctx = document.getElementById('chartFrequencia').getContext('2d');
+    const labels = Object.keys(frequencias);
+    const valores = Object.values(frequencias);
+
+    if (meuGrafico) {
+        meuGrafico.destroy();
+    }
+
+    meuGrafico = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Frequência Absoluta',
+                data: valores,
+                backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                borderColor: '#3b82f6',
+                borderWidth: 1.5,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0, color: '#94a3b8' },
+                    grid: { color: '#334155' }
+                },
+                x: {
+                    ticks: { color: '#94a3b8' },
+                    grid: { color: '#334155' }
+                }
+            },
+            plugins: {
+                legend: { labels: { color: '#f8fafc' } }
+            }
+        }
+    });
+}
+
+// Executa um cálculo inicial com dados de exemplo ao carregar
+window.onload = function() {
+    document.getElementById('inputDados').value = "10, 12, 12, 14, 15, 15, 15, 18, 20, 22";
+    calcularEstatistica();
+};
+</script>
+{% endblock %}

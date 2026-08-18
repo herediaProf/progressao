@@ -1,118 +1,63 @@
-{% extends "base.html" %} {% block title %}Círculo Trigonométrico Interativo{%
-endblock %} {% block content %}
-<h2 style="margin-bottom: 20px">
-  1. Círculo Trigonométrico e Ondas ($sen$, $cos$, $tan$)
-</h2>
+{% extends "base.html" %}
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
-  <div style="background: var(--bg-card); padding: 20px; border-radius: 8px">
-    <h3>Círculo Trigonométrico (Unitário)</h3>
-    <p style="color: var(--text-muted); margin-bottom: 10px">
-      Arraste o ponto $P$ ao longo da circunferência.
-    </p>
-    <div
-      id="box-circulo"
-      class="jxdbox"
-      style="width: 100%; height: 400px; border-radius: 6px"
-    ></div>
-  </div>
+{% block title %}Círculo Trigonométrico Interativo{% endblock %}
 
-  <div style="background: var(--bg-card); padding: 20px; border-radius: 8px">
-    <h3>Projeção das Funções ($sen, cos$)</h3>
-    <div
-      id="info-trig"
-      style="margin-bottom: 10px; font-size: 1.1rem; color: #38bdf8"
-    >
-      Ângulo: 0°
+{% block content %}
+<h2 style="margin-bottom: 20px;">1. Círculo Trigonométrico e Ondas ($sen$, $cos$, $tan$)</h2>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div style="background: var(--bg-card); padding: 20px; border-radius: 8px;">
+        <h3>Círculo Trigonométrico (Unitário)</h3>
+        <p style="color: var(--text-muted); margin-bottom: 10px;">Arraste o ponto $P$ ao longo da circunferência.</p>
+        <div id="box-circulo" class="jxdbox" style="width:100%; height:400px; border-radius: 6px;"></div>
     </div>
-    <div
-      id="box-onda"
-      class="jxdbox"
-      style="width: 100%; height: 360px; border-radius: 6px"
-    ></div>
-  </div>
+
+    <div style="background: var(--bg-card); padding: 20px; border-radius: 8px;">
+        <h3>Projeção das Funções ($sen, cos$)</h3>
+        <div id="info-trig" style="margin-bottom: 10px; font-size: 1.1rem; color: #38bdf8;">Ângulo: 0°</div>
+        <div id="box-onda" class="jxdbox" style="width:100%; height:360px; border-radius: 6px;"></div>
+    </div>
 </div>
-{% endblock %} {% block extra_js %}
+{% endblock %}
+
+{% block extra_js %}
 <script>
-  // Inicialização do JSXGraph para o Círculo
-  const bCirculo = JXG.JSXGraph.initBoard("box-circulo", {
-    boundingbox: [-1.5, 1.5, 1.5, -1.5],
-    axis: true,
-    showCopyright: false,
-  });
+    // Inicialização do JSXGraph para o Círculo
+    const bCirculo = JXG.JSXGraph.initBoard('box-circulo', {
+        boundingbox: [-1.5, 1.5, 1.5, -1.5], axis: true, showCopyright: false
+    });
+    
+    const orig = bCirculo.create('point', [0,0], {fixed:true, visible:false});
+    const circ = bCirculo.create('circle', [orig, 1], {strokeColor: '#64748b', strokeWidth: 2});
+    const pPonto = bCirculo.create('glider', [1, 0, circ], {name: 'P', size: 5, color: '#3b82f6'});
+    
+    // Linhas do Seno (Verde) e Cosseno (Laranja)
+    const pCos = bCirculo.create('point', [() => pPonto.X(), 0], {name: '', size: 1, visible: false});
+    const pSen = bCirculo.create('point', [0, () => pPonto.Y()], {name: '', size: 1, visible: false});
+    
+    bCirculo.create('segment', [orig, pPonto], {color: '#94a3b8', dash: 2});
+    bCirculo.create('segment', [pPonto, pCos], {color: '#10b981', strokeWidth: 3, name: 'sen(x)'});
+    bCirculo.create('segment', [pPonto, pSen], {color: '#f59e0b', strokeWidth: 3, name: 'cos(x)'});
 
-  const orig = bCirculo.create("point", [0, 0], {
-    fixed: true,
-    visible: false,
-  });
-  const circ = bCirculo.create("circle", [orig, 1], {
-    strokeColor: "#64748b",
-    strokeWidth: 2,
-  });
-  const pPonto = bCirculo.create("glider", [1, 0, circ], {
-    name: "P",
-    size: 5,
-    color: "#3b82f6",
-  });
+    // Quadro da Onda Senoidal
+    const bOnda = JXG.JSXGraph.initBoard('box-onda', {
+        boundingbox: [-0.5, 1.5, 7, -1.5], axis: true, showCopyright: false
+    });
+    
+    bOnda.create('functiongraph', [Math.sin, 0, 2*Math.PI], {color: '#10b981', strokeWidth: 2});
+    bOnda.create('functiongraph', [Math.cos, 0, 2*Math.PI], {color: '#f59e0b', strokeWidth: 2});
 
-  // Linhas do Seno (Verde) e Cosseno (Laranja)
-  const pCos = bCirculo.create("point", [() => pPonto.X(), 0], {
-    name: "",
-    size: 1,
-    visible: false,
-  });
-  const pSen = bCirculo.create("point", [0, () => pPonto.Y()], {
-    name: "",
-    size: 1,
-    visible: false,
-  });
+    const pOndaSen = bOnda.create('point', [
+        () => Math.atan2(pPonto.Y(), pPonto.X()) < 0 ? Math.atan2(pPonto.Y(), pPonto.X()) + 2*Math.PI : Math.atan2(pPonto.Y(), pPonto.X()),
+        () => pPonto.Y()
+    ], {name: 'Sen', color: '#10b981', size: 4});
 
-  bCirculo.create("segment", [orig, pPonto], { color: "#94a3b8", dash: 2 });
-  bCirculo.create("segment", [pPonto, pCos], {
-    color: "#10b981",
-    strokeWidth: 3,
-    name: "sen(x)",
-  });
-  bCirculo.create("segment", [pPonto, pSen], {
-    color: "#f59e0b",
-    strokeWidth: 3,
-    name: "cos(x)",
-  });
-
-  // Quadro da Onda Senoidal
-  const bOnda = JXG.JSXGraph.initBoard("box-onda", {
-    boundingbox: [-0.5, 1.5, 7, -1.5],
-    axis: true,
-    showCopyright: false,
-  });
-
-  bOnda.create("functiongraph", [Math.sin, 0, 2 * Math.PI], {
-    color: "#10b981",
-    strokeWidth: 2,
-  });
-  bOnda.create("functiongraph", [Math.cos, 0, 2 * Math.PI], {
-    color: "#f59e0b",
-    strokeWidth: 2,
-  });
-
-  const pOndaSen = bOnda.create(
-    "point",
-    [
-      () =>
-        Math.atan2(pPonto.Y(), pPonto.X()) < 0
-          ? Math.atan2(pPonto.Y(), pPonto.X()) + 2 * Math.PI
-          : Math.atan2(pPonto.Y(), pPonto.X()),
-      () => pPonto.Y(),
-    ],
-    { name: "Sen", color: "#10b981", size: 4 },
-  );
-
-  pPonto.on("drag", () => {
-    let anguloRad = Math.atan2(pPonto.Y(), pPonto.X());
-    if (anguloRad < 0) anguloRad += 2 * Math.PI;
-    let anguloGraus = Math.round(anguloRad * (180 / Math.PI));
-    document.getElementById("info-trig").innerHTML =
-      `Ângulo: <strong>${anguloGraus}°</strong> | sen: <span style="color:#10b981">${pPonto.Y().toFixed(2)}</span> | cos: <span style="color:#f59e0b">${pPonto.X().toFixed(2)}</span>`;
-  });
+    pPonto.on('drag', () => {
+        let anguloRad = Math.atan2(pPonto.Y(), pPonto.X());
+        if (anguloRad < 0) anguloRad += 2 * Math.PI;
+        let anguloGraus = Math.round(anguloRad * (180 / Math.PI));
+        document.getElementById('info-trig').innerHTML = 
+            `Ângulo: <strong>${anguloGraus}°</strong> | sen: <span style="color:#10b981">${pPonto.Y().toFixed(2)}</span> | cos: <span style="color:#f59e0b">${pPonto.X().toFixed(2)}</span>`;
+    });
 </script>
 {% endblock %}

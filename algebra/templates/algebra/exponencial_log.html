@@ -1,96 +1,59 @@
-{% extends "base.html" %} {% block title %}Exponencial vs Logarítmica{% endblock
-%} {% block content %}
-<h2>
-  3. Relação Simétrica: Função Exponencial $f(x) = a^x$ e Logarítmica $g(x) =
-  \log_a(x)$
-</h2>
+{% extends "base.html" %}
 
-<div
-  style="
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 20px;
-    margin-top: 20px;
-  "
->
-  <div style="background: var(--bg-card); padding: 20px; border-radius: 8px">
-    <h3>Parâmetros</h3>
-    <br />
-    <label>Base ($a$): <span id="valA">2</span></label>
-    <input
-      type="range"
-      id="baseA"
-      min="1.2"
-      max="4"
-      step="0.1"
-      value="2"
-      style="width: 100%"
-      oninput="desenharGrafico()"
-    />
+{% block title %}Exponencial vs Logarítmica{% endblock %}
 
-    <div style="margin-top: 20px; font-size: 0.95rem; color: var(--text-muted)">
-      <p>• As funções são <strong>inversas</strong> entre si.</p>
-      <br />
-      <p>• Observe a simetria perfeita em relação à reta bissetriz $y = x$.</p>
+{% block content %}
+<h2>3. Relação Simétrica: Função Exponencial $f(x) = a^x$ e Logarítmica $g(x) = \log_a(x)$</h2>
+
+<div style="display: grid; grid-template-columns: 280px 1fr; gap: 20px; margin-top: 20px;">
+    <div style="background: var(--bg-card); padding: 20px; border-radius: 8px;">
+        <h3>Parâmetros</h3><br>
+        <label>Base ($a$): <span id="valA">2</span></label>
+        <input type="range" id="baseA" min="1.2" max="4" step="0.1" value="2" style="width:100%;" oninput="desenharGrafico()">
+        
+        <div style="margin-top: 20px; font-size: 0.95rem; color: var(--text-muted);">
+            <p>• As funções são <strong>inversas</strong> entre si.</p><br>
+            <p>• Observe a simetria perfeita em relação à reta bissetriz $y = x$.</p>
+        </div>
     </div>
-  </div>
 
-  <div style="background: var(--bg-card); padding: 20px; border-radius: 8px">
-    <div
-      id="box-exp-log"
-      class="jxdbox"
-      style="width: 100%; height: 450px; border-radius: 6px"
-    ></div>
-  </div>
+    <div style="background: var(--bg-card); padding: 20px; border-radius: 8px;">
+        <div id="box-exp-log" class="jxdbox" style="width:100%; height:450px; border-radius: 6px;"></div>
+    </div>
 </div>
-{% endblock %} {% block extra_js %}
-<script>
-  let board;
+{% endblock %}
 
-  function desenharGrafico() {
-    const a = parseFloat(document.getElementById("baseA").value);
-    document.getElementById("valA").innerText = a;
+{% block extra_js %}
+<script>
+let board;
+
+function desenharGrafico() {
+    const a = parseFloat(document.getElementById('baseA').value);
+    document.getElementById('valA').innerText = a;
 
     if (!board) {
-      board = JXG.JSXGraph.initBoard("box-exp-log", {
-        boundingbox: [-4, 8, 8, -4],
-        axis: true,
-        showCopyright: false,
-      });
+        board = JXG.JSXGraph.initBoard('box-exp-log', {
+            boundingbox: [-4, 8, 8, -4], axis: true, showCopyright: false
+        });
     } else {
-      board.suspendUpdate();
-      board.checkFullUpdate();
+        board.suspendUpdate();
+        board.checkFullUpdate();
     }
 
     board.removeObject(board.objectsList);
 
     // Reta de Simetria y = x
-    board.create(
-      "line",
-      [
-        [0, 0],
-        [1, 1],
-      ],
-      { dash: 2, color: "#94a3b8", name: "y = x" },
-    );
+    board.create('line', [[0,0], [1,1]], {dash: 2, color: '#94a3b8', name: 'y = x'});
 
     // Curva Exponencial (Azul)
-    board.create("functiongraph", [(x) => Math.pow(a, x), -4, 8], {
-      color: "#3b82f6",
-      strokeWidth: 3,
-      name: `f(x) = ${a}^x`,
-    });
+    board.create('functiongraph', [x => Math.pow(a, x), -4, 8], {color: '#3b82f6', strokeWidth: 3, name: `f(x) = ${a}^x`});
 
     // Curva Logarítmica (Laranja)
-    board.create("functiongraph", [(x) => Math.log(x) / Math.log(a), 0.01, 8], {
-      color: "#f59e0b",
-      strokeWidth: 3,
-      name: `g(x) = log_${a}(x)`,
-    });
+    board.create('functiongraph', [x => Math.log(x) / Math.log(a), 0.01, 8], {color: '#f59e0b', strokeWidth: 3, name: `g(x) = log_${a}(x)`});
 
     board.unsuspendUpdate();
-  }
+}
 
-  window.onload = desenharGrafico;
+window.onload = desenharGrafico;
 </script>
 {% endblock %}

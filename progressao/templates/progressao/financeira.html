@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Juros Simples (P.A.) vs. Juros Compostos (P.G.){% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px;">3.1 Matemática Financeira: P.A. vs. P.G.</h2>
+
+<div style="display: grid; grid-template-columns: 320px 1fr; gap: 20px;">
+    <!-- Formulário de Parâmetros -->
+    <div style="background: var(--bg-card); padding: 20px; border-radius: 8px;">
+        <h3>Parâmetros do Aporte</h3>
+        
+        <div style="margin-top: 15px;">
+            <label style="font-size: 0.9rem; color: #94a3b8;">Capital Inicial ($C$ em R$):</label>
+            <input type="number" id="inputCapital" value="1000" step="100" style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; background: #0f172a; color: white; border: 1px solid #334155;">
+        </div>
+
+        <div style="margin-top: 15px;">
+            <label style="font-size: 0.9rem; color: #94a3b8;">Taxa Mensal ($i$ em %):</label>
+            <input type="number" id="inputTaxa" value="2.5" step="0.1" style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; background: #0f172a; color: white; border: 1px solid #334155;">
+        </div>
+
+        <div style="margin-top: 15px;">
+            <label style="font-size: 0.9rem; color: #94a3b8;">Tempo ($t$ em meses):</label>
+            <input type="number" id="inputTempo" value="24" max="120" style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; background: #0f172a; color: white; border: 1px solid #334155;">
+        </div>
+
+        <button onclick="simularJuros()" style="width: 100%; margin-top: 20px; padding: 12px; background: var(--accent-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+            📈 Simular Rendimentos
+        </button>
+
+        <!-- Indicadores -->
+        <div id="cardsResultados" style="margin-top: 25px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="background: #0f172a; padding: 12px; border-radius: 6px; border-left: 4px solid #38bdf8;">
+                <div style="font-size: 0.8rem; color: #94a3b8;">Montante Juros Simples (P.A.)</div>
+                <div id="resSimples" style="font-size: 1.2rem; font-weight: bold; color: #38bdf8;">R$ 0,00</div>
+            </div>
+            <div style="background: #0f172a; padding: 12px; border-radius: 6px; border-left: 4px solid #10b981;">
+                <div style="font-size: 0.8rem; color: #94a3b8;">Montante Juros Compostos (P.G.)</div>
+                <div id="resCompostos" style="font-size: 1.2rem; font-weight: bold; color: #10b981;">R$ 0,00</div>
+            </div>
+            <div style="background: #0f172a; padding: 12px; border-radius: 6px; border-left: 4px solid #f59e0b;">
+                <div style="font-size: 0.8rem; color: #94a3b8;">Diferença de Juros (Efeito P.G.)</div>
+                <div id="resDiferenca" style="font-size: 1.1rem; font-weight: bold; color: #f59e0b;">R$ 0,00</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico Comparativo em Linhas (Chart.js) -->
+    <div style="background: var(--bg-card); padding: 20px; border-radius: 8px;">
+        <h3>Curva de Crescimento: Linear vs. Exponencial</h3>
+        <div style="position: relative; height: 420px; margin-top: 15px;">
+            <canvas id="chartFinanceira"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let graficoFinanceiro = null;
+
+function simularJuros() {
+    const c = document.getElementById('inputCapital').value;
+    const i = document.getElementById('inputTaxa').value;
+    const t = document.getElementById('inputTempo').value;
+
+    fetch(`/progressao/api/financeira/?capital=${c}&taxa=${i}&tempo=${t}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'erro') {
+                alert(data.mensagem);
+                return;
+            }
+
+            const r = data.resultados;
+
+            // Formatação de moeda BRL
+            const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            document.getElementById('resSimples').innerText = fmt(r.montante_final_simples);
+            document.getElementById('resCompostos').innerText = fmt(r.montante_final_compostos);
+            document.getElementById('resDiferenca').innerText = fmt(r.diferenca);
+
+            atualizarGrafico(r.meses, r.simples, r.compostos);
+        });
+}
+
+function atualizarGrafico(meses, dadosSimples, dadosCompostos) {
+    const ctx = document.getElementById('chartFinanceira').getContext('2d');
+
+    if (graficoFinanceiro) {
+        graficoFinanceiro.destroy();
+    }
+
+    graficoFinanceiro = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: meses.map(m => `Mês ${m}`),
+            datasets: [
+                {
+                    label: 'Juros Simples (P.A. - Reta)',
+                    data: dadosSimples,
+                    borderColor: '#38bdf8',
+                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                    fill: false,
+                    tension: 0.1
+                },
+                {
+                    label: 'Juros Compostos (P.G. - Curva Exponencial)',
+                    data: dadosCompostos,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: false,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    ticks: { color: '#94a3b8' },
+                    grid: { color: '#334155' }
+                },
+                x: {
+                    ticks: { color: '#94a3b8' },
+                    grid: { color: '#334155' }
+                }
+            },
+            plugins: {
+                legend: { labels: { color: '#f8fafc' } }
+            }
+        }
+    });
+}
+
+window.onload = function() {
+    simularJuros();
+};
+</script>
+{% endblock %}

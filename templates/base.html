@@ -3,32 +3,33 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>
-      {% block title %}Laboratório Dinâmico de Matemática{% endblock %}
-    </title>
+    <title>{% block title %}Laboratório Dinâmico de Matemática{% endblock %}</title>
 
-    <!-- Estilização Base / CSS -->
+    <!-- Favicon SVG -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📐</text></svg>">
+
+    <!-- Design System / CSS Base -->
     <style>
       :root {
         --bg-primary: #0f172a;
         --bg-card: #1e293b;
-        --accent-blue: #3b82f6;
+        --border-color: #334155;
+        --accent-blue: #38bdf8;
         --accent-green: #10b981;
         --accent-orange: #f59e0b;
         --text-main: #f8fafc;
         --text-muted: #94a3b8;
+        --text-dark: #64748b;
       }
+
       * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
       }
+
       body {
-        font-family:
-          "Segoe UI",
-          system-ui,
-          -apple-system,
-          sans-serif;
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
         background: var(--bg-primary);
         color: var(--text-main);
         min-height: 100vh;
@@ -36,41 +37,74 @@
         flex-direction: column;
       }
 
-      /* Navbar */
-      nav {
+      /* Bar de Navegação Responsiva */
+      .navbar {
         background: var(--bg-card);
-        border-bottom: 1px solid #334155;
-        padding: 15px 30px;
+        border-bottom: 1px solid var(--border-color);
+        padding: 12px 24px;
         display: flex;
-        justify-content: space-between;
         align-items: center;
-      }
-      nav .logo {
-        font-size: 1.2rem;
-        font-weight: bold;
-        color: var(--accent-blue);
-        text-decoration: none;
-      }
-      nav ul {
-        display: flex;
-        list-style: none;
-        gap: 20px;
-      }
-      nav a {
-        color: var(--text-muted);
-        text-decoration: none;
-        font-weight: 500;
-        transition: color 0.2s;
-      }
-      nav a:hover,
-      nav a.active {
-        color: var(--accent-blue);
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
       }
 
-      /* Container Principal */
+      .logo {
+        color: var(--accent-blue);
+        font-size: 1.2rem;
+        font-weight: 800;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .nav-links {
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .nav-links a {
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+      }
+
+      .nav-links a:hover {
+        color: var(--text-main);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .nav-group {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(15, 23, 42, 0.6);
+        padding: 4px 8px;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+      }
+
+      .group-label {
+        color: var(--text-dark);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-right: 4px;
+      }
+
+      /* Conteúdo Principal */
       main {
         flex: 1;
-        padding: 30px;
+        padding: 24px;
         max-width: 1400px;
         width: 100%;
         margin: 0 auto;
@@ -79,59 +113,86 @@
       /* Footer */
       footer {
         background: var(--bg-card);
-        border-top: 1px solid #334155;
+        border-top: 1px solid var(--border-color);
         text-align: center;
-        padding: 15px;
+        padding: 16px;
         color: var(--text-muted);
-        font-size: 0.9rem;
+        font-size: 0.85rem;
       }
     </style>
 
-    <!-- Bibliotecas Matemáticas e Gráficas (CDNs oficiais de alta performance) -->
-    <!-- 1. JSXGraph (Geometria 2D e Trigonometria) -->
-    <link
-      rel="stylesheet"
-      type="text/css"
-      href="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraph.css"
-    />
-    <script
-      type="text/javascript"
-      src="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraphcore.js"
-    ></script>
+    <!-- CDNs de Alta Performance -->
+    <!-- JSXGraph (Geometria 2D e Trigonometria) -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraph.css" />
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraphcore.js"></script>
 
-    <!-- 2. MathJax (Renderização de Fórmulas e LaTeX) -->
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script
-      id="MathJax-script"
-      async
-      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
-    ></script>
+    <!-- MathJax (LaTeX) -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-    <!-- 3. Three.js (Geometria Espacial 3D e Matrizes) -->
+    <!-- Three.js (Geometria 3D e Matrizes) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <!-- 4. Chart.js (Estatística e Finanças) -->
+    <!-- Chart.js (Estatística e Finanças) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     {% block extra_head %}{% endblock %}
   </head>
-  <body>
-    <nav>
-      <a href="/" class="logo">📐 MathLab Interativo</a>
-      <ul>
-        <li><a href="/">Início</a></li>
-        <li><a href="/geometria/trigonometria/">Trigonometria</a></li>
-        <li><a href="/geometria/espacial/">Geometria 3D</a></li>
-        <li><a href="/algebra/exponencial-log/">Exp & Log</a></li>
-        <li><a href="/progressao/">PA & PG</a></li>
-      </ul>
-    </nav>
 
-    <main>{% block content %}{% endblock %}</main>
+  <body>
+    <header>
+      <nav class="navbar">
+        <a href="{% url 'home' %}" class="logo">
+          <span>📐</span> MathLab Interativo
+        </a>
+
+        <ul class="nav-links">
+          <li><a href="{% url 'home' %}">🏠 Início</a></li>
+
+          <!-- Álgebra -->
+          <li class="nav-group">
+            <span class="group-label">Álgebra:</span>
+            <a href="{% url 'conjuntos_home' %}">Conjuntos</a>
+            <a href="{% url 'exp_log' %}">Exp & Log</a>
+            <a href="{% url 'matrizes_home' %}">Matrizes</a>
+          </li>
+
+          <!-- Sequências -->
+          <li class="nav-group">
+            <span class="group-label">Sequências:</span>
+            <a href="{% url 'simulador_pa_pg' %}">PA & PG</a>
+            <a href="{% url 'financeira_home' %}">Mat. Financeira</a>
+          </li>
+
+          <!-- Geometria -->
+          <li class="nav-group">
+            <span class="group-label">Geometria:</span>
+            <a href="/geometria/trigonometria/">Trigonometria</a>
+            <a href="/geometria/espacial/">Geometria 3D</a>
+          </li>
+
+          <!-- Estatística -->
+          <li class="nav-group">
+            <span class="group-label">Estatística:</span>
+            <a href="/estatistica/">Análise</a>
+            <a href="/estatistica/probabilidade/">Probabilidade</a>
+          </li>
+
+          <!-- Desafios   -->
+          <li class="nav-group">
+            <span class="group-label">Desafios:</span>
+            <a href="{% url 'desafios_index' %}">Início</a>
+            <a href="{% url 'desafio_dinamico' %}">Dinâmico</a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      {% block content %}{% endblock %}
+    </main>
 
     <footer>
-      Laboratório Dinâmico de Matemática — Desenvolvido com Django, JSXGraph &
-      Three.js
+      Laboratório Dinâmico de Matemática — Desenvolvido com Django, JSXGraph, Three.js & Chart.js
     </footer>
 
     {% block extra_js %}{% endblock %}

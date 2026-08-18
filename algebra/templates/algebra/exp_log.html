@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Exponenciais e Logaritmos - MathLab{% endblock %}
+
+{% block content %}
+<style>
+  .dark-container { max-width: 1200px; margin: 0 auto; color: var(--text-main); }
+  .grid-layout { display: grid; grid-template-columns: 340px 1fr; gap: 20px; margin-top: 20px; }
+  
+  /* Garante que o painel de controle fique sempre acima e clicável */
+  .card-panel-controls { 
+    background: var(--bg-card); 
+    border: 1px solid var(--border-color); 
+    border-radius: 10px; 
+    padding: 20px; 
+    position: relative; 
+    z-index: 10; 
+  }
+  
+  .card-panel-canvas { 
+    background: var(--bg-card); 
+    border: 1px solid var(--border-color); 
+    border-radius: 10px; 
+    padding: 20px; 
+    position: relative; 
+    z-index: 1; 
+  }
+
+  .form-group { margin-bottom: 20px; }
+  .form-group label { display: block; font-size: 0.88rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+  .val-highlight { color: var(--accent-blue); font-weight: 700; }
+
+  select.dark-input { 
+    width: 100%; 
+    background: var(--bg-primary); 
+    color: var(--text-main); 
+    border: 1px solid var(--border-color); 
+    padding: 10px; 
+    border-radius: 6px; 
+    outline: none; 
+    font-weight: 600; 
+    cursor: pointer; 
+  }
+
+  /* Customização fluida do Slider */
+  input[type="range"].dark-range { 
+    width: 100%; 
+    height: 6px;
+    accent-color: var(--accent-blue); 
+    background: var(--bg-primary); 
+    border-radius: 3px;
+    cursor: grab; 
+    touch-action: none;
+  }
+  input[type="range"].dark-range:active {
+    cursor: grabbing;
+  }
+
+  .info-box { 
+    background: var(--bg-primary); 
+    border: 1px solid var(--border-color); 
+    padding: 12px 16px; 
+    border-radius: 8px; 
+    font-size: 0.95rem; 
+    font-weight: 600; 
+    color: var(--accent-green); 
+  }
+
+  canvas { 
+    width: 100%; 
+    height: 380px; 
+    background: #0b0f19; 
+    border: 1px solid var(--border-color); 
+    border-radius: 8px; 
+    display: block; 
+  }
+</style>
+
+<div class="dark-container">
+  <h1 style="font-size: 1.8rem; font-weight: 700; margin: 0;">Funções Exponenciais e Logarítmicas</h1>
+
+  <div class="grid-layout">
+    <!-- Controles com Z-Index Elevado -->
+    <div class="card-panel-controls">
+      <div class="form-group">
+        <label for="tipo">Tipo de Função:</label>
+        <select id="tipo" class="dark-input">
+          <option value="exp">Exponencial: f(x) = k · aˣ</option>
+          <option value="log">Logarítmica: f(x) = k · logₐ(x)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="base">Base (a): <span id="base_val" class="val-highlight">2.0</span></label>
+        <input type="range" id="base" class="dark-range" min="0.1" max="5.0" step="0.1" value="2.0">
+      </div>
+
+      <div class="form-group">
+        <label for="k">Multiplicador (k): <span id="k_val" class="val-highlight">1.0</span></label>
+        <input type="range" id="k" class="dark-range" min="-3" max="3" step="0.1" value="1.0">
+      </div>
+
+      <div id="info" class="info-box">Crescimento Exponencial (a > 1)</div>
+    </div>
+
+    <!-- Visualização Gráfica -->
+    <div class="card-panel-canvas">
+      <div style="color: var(--text-muted); font-weight: 600; margin-bottom: 10px;">Comportamento no Plano Cartesiano ℝ²</div>
+      <canvas id="canvasExpLog" width="650" height="380"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const elTipo = document.getElementById("tipo");
+    const elBase = document.getElementById("base");
+    const elK = document.getElementById("k");
+    const elBaseVal = document.getElementById("base_val");
+    const elKVal = document.getElementById("k_val");
+    const elInfo = document.getElementById("info");
+    const canvas = document.getElementById("canvasExpLog");
+    const ctx = canvas.getContext("2d");
+
+    let animationFrame = null;
+
+    function render() {
+      const tipo = elTipo.value;
+      const a = parseFloat(elBase.value);
+      const k = parseFloat(elK.value);
+
+      elBaseVal.innerText = a.toFixed(1);
+      elKVal.innerText = k.toFixed(1);
+
+      // Tratamento de mensagens pedagógicas
+      if (Math.abs(a - 1.0) < 0.05) {
+        if (tipo === "exp") {
+          elInfo.innerText = "Base a = 1: Função Constante f(x) = k";
+          elInfo.style.color = "var(--accent-orange)";
+        } else {
+          elInfo.innerText = "Base a = 1: Indefinição (log₇(x) não existe para a=1)";
+          elInfo.style.color = "#ef4444";
+        }
+      } else if (a > 1) {
+        elInfo.innerText = tipo === "exp" ? "Crescimento Exponencial (a > 1)" : "Função Logarítmica Crescente (a > 1)";
+        elInfo.style.color = "var(--accent-green)";
+      } else {
+        elInfo.innerText = tipo === "exp" ? "Decaimento Exponencial (0 < a < 1)" : "Função Logarítmica Decrescente (0 < a < 1)";
+        elInfo.style.color = "var(--accent-blue)";
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const escala = 40;
+
+      // Grade de Fundo
+      ctx.strokeStyle = "#1e293b";
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += escala) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += escala) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+      }
+
+      // Eixos Cartesianos
+      ctx.strokeStyle = "#475569";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, cy); ctx.lineTo(canvas.width, cy);
+      ctx.moveTo(cx, 0); ctx.lineTo(cx, canvas.height);
+      ctx.stroke();
+
+      // Numeração
+      ctx.fillStyle = "#64748b";
+      ctx.font = "11px sans-serif";
+      for (let i = -7; i <= 7; i++) {
+        if (i !== 0) {
+          ctx.fillText(i, cx + i * escala - 4, cy + 16);
+          ctx.fillText(-i, cx - 18, cy + i * escala + 4);
+        }
+      }
+
+      // Linha de Assíntota
+      ctx.strokeStyle = "#ef4444";
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      if (tipo === "exp") {
+        ctx.moveTo(0, cy); ctx.lineTo(canvas.width, cy);
+      } else {
+        ctx.moveTo(cx, 0); ctx.lineTo(cx, canvas.height);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Bloqueia curva para logaritmo na base 1
+      if (tipo === "log" && Math.abs(a - 1.0) < 0.05) return;
+
+      // Desenho da Função
+      ctx.strokeStyle = tipo === "exp" ? "var(--accent-blue)" : "var(--accent-orange)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+
+      let desenhando = false;
+
+      for (let px = 0; px < canvas.width; px += 1) {
+        const x = (px - cx) / escala;
+        let y = 0;
+
+        if (tipo === "exp") {
+          y = k * Math.pow(a, x);
+        } else {
+          if (x <= 0) continue;
+          y = k * (Math.log(x) / Math.log(a));
+        }
+
+        if (!isFinite(y)) continue;
+
+        const py = cy - y * escala;
+
+        if (py >= -100 && py <= canvas.height + 100) {
+          if (!desenhando) {
+            ctx.moveTo(px, py);
+            desenhando = true;
+          } else {
+            ctx.lineTo(px, py);
+          }
+        } else {
+          desenhando = false;
+        }
+      }
+      ctx.stroke();
+
+      // Ponto Notável
+      ctx.fillStyle = "#10b981";
+      ctx.beginPath();
+      if (tipo === "exp") {
+        const pyNotavel = cy - k * escala;
+        if (pyNotavel >= 0 && pyNotavel <= canvas.height) {
+          ctx.arc(cx, pyNotavel, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        ctx.arc(cx + 1 * escala, cy, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function dispararRender() {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+      animationFrame = requestAnimationFrame(render);
+    }
+
+    // Escutas diretas nos elementos (Funciona em tempo real enquanto arrasta)
+    elBase.addEventListener("input", dispararRender);
+    elK.addEventListener("input", dispararRender);
+    elTipo.addEventListener("change", dispararRender);
+
+    // Renderização inicial
+    render();
+  });
+</script>
+{% endblock %}
